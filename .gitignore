@@ -1,0 +1,15 @@
+# Credentials
+.env
+
+# Python
+venv/
+.venv/
+__pycache__/
+
+# Node/Frontend
+node_modules/
+build/
+
+# Data
+*.csv
+*.parquet
