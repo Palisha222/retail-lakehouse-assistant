@@ -1,9 +1,9 @@
 {
   "format-version" : 2,
-  "table-uuid" : "e96d59e7-207b-4ab8-8357-99eba11159c9",
+  "table-uuid" : "d31b75a0-e8c1-41ca-b9f8-7abc012fc311",
   "location" : "c:\\Users\\palisha.shakya\\Downloads\\Project1\\Iceberg\\output\\iceberg_warehouse/db/fact_sales",
   "last-sequence-number" : 1,
-  "last-updated-ms" : 1782731416089,
+  "last-updated-ms" : 1782788538513,
   "last-column-id" : 7,
   "current-schema-id" : 0,
   "schemas" : [ {
@@ -66,20 +66,20 @@
     "owner" : "palisha.shakya",
     "write.parquet.compression-codec" : "zstd"
   },
-  "current-snapshot-id" : 5877991243923381819,
+  "current-snapshot-id" : 6601570308674708664,
   "refs" : {
     "main" : {
-      "snapshot-id" : 5877991243923381819,
+      "snapshot-id" : 6601570308674708664,
       "type" : "branch"
     }
   },
   "snapshots" : [ {
     "sequence-number" : 1,
-    "snapshot-id" : 5877991243923381819,
-    "timestamp-ms" : 1782731416089,
+    "snapshot-id" : 6601570308674708664,
+    "timestamp-ms" : 1782788538513,
     "summary" : {
       "operation" : "append",
-      "spark.app.id" : "local-1782729944232",
+      "spark.app.id" : "local-1782788521164",
       "added-data-files" : "335",
       "added-records" : "1000",
       "added-files-size" : "734010",
@@ -91,17 +91,17 @@
       "total-position-deletes" : "0",
       "total-equality-deletes" : "0"
     },
-    "manifest-list" : "c:/Users/palisha.shakya/Downloads/Project1/Iceberg/output/iceberg_warehouse/db/fact_sales/metadata/snap-5877991243923381819-1-efd982bd-f3bf-4d8e-8848-c76697af937e.avro",
+    "manifest-list" : "c:/Users/palisha.shakya/Downloads/Project1/Iceberg/output/iceberg_warehouse/db/fact_sales/metadata/snap-6601570308674708664-1-cff75001-5365-45d3-ad05-51c25f095080.avro",
     "schema-id" : 0
   } ],
   "statistics" : [ ],
   "partition-statistics" : [ ],
   "snapshot-log" : [ {
-    "timestamp-ms" : 1782731416089,
-    "snapshot-id" : 5877991243923381819
+    "timestamp-ms" : 1782788538513,
+    "snapshot-id" : 6601570308674708664
   } ],
   "metadata-log" : [ {
-    "timestamp-ms" : 1782731411396,
+    "timestamp-ms" : 1782788532629,
     "metadata-file" : "c:/Users/palisha.shakya/Downloads/Project1/Iceberg/output/iceberg_warehouse/db/fact_sales/metadata/v1.metadata.json"
   } ]
 }

@@ -1,9 +1,9 @@
 {
   "format-version" : 2,
-  "table-uuid" : "e96d59e7-207b-4ab8-8357-99eba11159c9",
+  "table-uuid" : "d31b75a0-e8c1-41ca-b9f8-7abc012fc311",
   "location" : "c:\\Users\\palisha.shakya\\Downloads\\Project1\\Iceberg\\output\\iceberg_warehouse/db/fact_sales",
   "last-sequence-number" : 0,
-  "last-updated-ms" : 1782731411396,
+  "last-updated-ms" : 1782788532629,
   "last-column-id" : 7,
   "current-schema-id" : 0,
   "schemas" : [ {
