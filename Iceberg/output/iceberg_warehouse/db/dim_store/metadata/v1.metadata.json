@@ -1,0 +1,84 @@
+{
+  "format-version" : 2,
+  "table-uuid" : "bbb93905-670a-44df-ac37-02f18edbb72d",
+  "location" : "C:\\Users\\palisha.shakya\\Downloads\\Project1\\Iceberg\\output\\iceberg_warehouse/db/dim_store",
+  "last-sequence-number" : 1,
+  "last-updated-ms" : 1782879959943,
+  "last-column-id" : 4,
+  "current-schema-id" : 0,
+  "schemas" : [ {
+    "type" : "struct",
+    "schema-id" : 0,
+    "fields" : [ {
+      "id" : 1,
+      "name" : "store_id",
+      "required" : false,
+      "type" : "long"
+    }, {
+      "id" : 2,
+      "name" : "store_name",
+      "required" : false,
+      "type" : "string"
+    }, {
+      "id" : 3,
+      "name" : "location",
+      "required" : false,
+      "type" : "string"
+    }, {
+      "id" : 4,
+      "name" : "manager_name",
+      "required" : false,
+      "type" : "string"
+    } ]
+  } ],
+  "default-spec-id" : 0,
+  "partition-specs" : [ {
+    "spec-id" : 0,
+    "fields" : [ ]
+  } ],
+  "last-partition-id" : 999,
+  "default-sort-order-id" : 0,
+  "sort-orders" : [ {
+    "order-id" : 0,
+    "fields" : [ ]
+  } ],
+  "properties" : {
+    "owner" : "palisha.shakya",
+    "write.parquet.compression-codec" : "zstd"
+  },
+  "current-snapshot-id" : 1432558142954076977,
+  "refs" : {
+    "main" : {
+      "snapshot-id" : 1432558142954076977,
+      "type" : "branch"
+    }
+  },
+  "snapshots" : [ {
+    "sequence-number" : 1,
+    "snapshot-id" : 1432558142954076977,
+    "timestamp-ms" : 1782879959943,
+    "summary" : {
+      "operation" : "append",
+      "spark.app.id" : "local-1782879952330",
+      "added-data-files" : "1",
+      "added-records" : "5",
+      "added-files-size" : "1568",
+      "changed-partition-count" : "1",
+      "total-records" : "5",
+      "total-files-size" : "1568",
+      "total-data-files" : "1",
+      "total-delete-files" : "0",
+      "total-position-deletes" : "0",
+      "total-equality-deletes" : "0"
+    },
+    "manifest-list" : "C:/Users/palisha.shakya/Downloads/Project1/Iceberg/output/iceberg_warehouse/db/dim_store/metadata/snap-1432558142954076977-1-973b44a8-2dc2-47b0-a87f-8e372ef6e1e2.avro",
+    "schema-id" : 0
+  } ],
+  "statistics" : [ ],
+  "partition-statistics" : [ ],
+  "snapshot-log" : [ {
+    "timestamp-ms" : 1782879959943,
+    "snapshot-id" : 1432558142954076977
+  } ],
+  "metadata-log" : [ ]
+}

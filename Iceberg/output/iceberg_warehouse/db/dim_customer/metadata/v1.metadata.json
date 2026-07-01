@@ -1,0 +1,89 @@
+{
+  "format-version" : 2,
+  "table-uuid" : "b8218425-4b7f-4e94-8e48-5c7728fed8d0",
+  "location" : "C:\\Users\\palisha.shakya\\Downloads\\Project1\\Iceberg\\output\\iceberg_warehouse/db/dim_customer",
+  "last-sequence-number" : 1,
+  "last-updated-ms" : 1782879958989,
+  "last-column-id" : 5,
+  "current-schema-id" : 0,
+  "schemas" : [ {
+    "type" : "struct",
+    "schema-id" : 0,
+    "fields" : [ {
+      "id" : 1,
+      "name" : "customer_id",
+      "required" : false,
+      "type" : "long"
+    }, {
+      "id" : 2,
+      "name" : "first_name",
+      "required" : false,
+      "type" : "string"
+    }, {
+      "id" : 3,
+      "name" : "last_name",
+      "required" : false,
+      "type" : "string"
+    }, {
+      "id" : 4,
+      "name" : "email",
+      "required" : false,
+      "type" : "string"
+    }, {
+      "id" : 5,
+      "name" : "signup_date",
+      "required" : false,
+      "type" : "date"
+    } ]
+  } ],
+  "default-spec-id" : 0,
+  "partition-specs" : [ {
+    "spec-id" : 0,
+    "fields" : [ ]
+  } ],
+  "last-partition-id" : 999,
+  "default-sort-order-id" : 0,
+  "sort-orders" : [ {
+    "order-id" : 0,
+    "fields" : [ ]
+  } ],
+  "properties" : {
+    "owner" : "palisha.shakya",
+    "write.parquet.compression-codec" : "zstd"
+  },
+  "current-snapshot-id" : 7971429028262043686,
+  "refs" : {
+    "main" : {
+      "snapshot-id" : 7971429028262043686,
+      "type" : "branch"
+    }
+  },
+  "snapshots" : [ {
+    "sequence-number" : 1,
+    "snapshot-id" : 7971429028262043686,
+    "timestamp-ms" : 1782879958989,
+    "summary" : {
+      "operation" : "append",
+      "spark.app.id" : "local-1782879952330",
+      "added-data-files" : "1",
+      "added-records" : "100",
+      "added-files-size" : "4144",
+      "changed-partition-count" : "1",
+      "total-records" : "100",
+      "total-files-size" : "4144",
+      "total-data-files" : "1",
+      "total-delete-files" : "0",
+      "total-position-deletes" : "0",
+      "total-equality-deletes" : "0"
+    },
+    "manifest-list" : "C:/Users/palisha.shakya/Downloads/Project1/Iceberg/output/iceberg_warehouse/db/dim_customer/metadata/snap-7971429028262043686-1-a923c57d-e6df-4b46-b932-255f00b08f8c.avro",
+    "schema-id" : 0
+  } ],
+  "statistics" : [ ],
+  "partition-statistics" : [ ],
+  "snapshot-log" : [ {
+    "timestamp-ms" : 1782879958989,
+    "snapshot-id" : 7971429028262043686
+  } ],
+  "metadata-log" : [ ]
+}
