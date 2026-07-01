@@ -9,6 +9,7 @@ from query_engine import (
 )
 from tools.lakehouse_tool import execute_query
 from tools.time_travel_tool import query_snapshot
+from agent import run_agent
 
 app = FastAPI(
     title="Retail Lakehouse API",
@@ -110,3 +111,13 @@ def run_time_travel(payload: dict = Body(...)):
         return query_snapshot(snapshot_id, sql)
     except ValueError as e:
         return {"error": str(e)}
+
+
+@app.post("/chat")
+def chat_endpoint(payload: dict = Body(...)):
+    message = payload.get("message")
+    if not message:
+        return {"error": "Message is required."}
+
+    response_text = run_agent(message)
+    return {"response": response_text}

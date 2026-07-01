@@ -54,3 +54,20 @@ def execute_query(sql: str):
     records = df.toPandas().to_dict(orient="records")
 
     return sanitize_records(records)
+
+
+def get_schema_info():
+    """
+    Returns column names and types for all retail lakehouse tables.
+    Useful for guiding the agent on table schemas.
+    """
+    tables = ["dim_customer", "dim_product", "dim_store", "dim_date", "fact_sales"]
+    schemas = {}
+    for t in tables:
+        try:
+            df = spark.sql(f"DESCRIBE local.db.{t}")
+            rows = df.collect()
+            schemas[t] = [f"{row['col_name']}: {row['data_type']}" for row in rows]
+        except Exception as e:
+            schemas[t] = f"Error: {str(e)}"
+    return schemas
