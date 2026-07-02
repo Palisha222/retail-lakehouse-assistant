@@ -1,212 +1,131 @@
-# import re
-# from tools.lakehouse_tool import execute_query, get_schema_info
-# from tools.time_travel_tool import query_snapshot
-# from query_engine import current_snapshot
+"""
+Gemini-based agent for the retail lakehouse chat assistant.
 
-# def run_agent(user_message: str) -> str:
-#     """
-#     Simulates the Conversational AI Agent.
-#     If an API key is not configured, it runs in a rule-based hybrid mode:
-#     1. It interprets common plain-English requests and translates them to SQL.
-#     2. If the input is raw SQL starting with SELECT, it executes it directly.
-#     3. Otherwise, it provides guidance on how to query the lakehouse.
-#     """
-#     msg = user_message.strip().lower()
+IMPORTANT: this uses the CURRENT Google SDK (`google-genai`), not the old
+`google.generativeai` package, which Google has deprecated and archived.
+If you already have code using `google.generativeai`, swap it for this —
+the old package is not guaranteed to keep working with newer models.
 
-#     # 1. Handle common plain English questions
-#     # Question: Top products
-#     if "top" in msg and "product" in msg:
-#         limit = 5
-#         match = re.search(r"top\s+(\d+)", msg)
-#         if match:
-#             limit = int(match.group(1))
-        
-#         sql = f"""
-#             SELECT p.product_name, p.category, ROUND(SUM(s.total_amount), 2) AS revenue 
-#             FROM local.db.fact_sales s
-#             JOIN local.db.dim_product p ON s.product_id = p.product_id
-#             GROUP BY p.product_name, p.category
-#             ORDER BY revenue DESC
-#             LIMIT {limit}
-#         """
-#         try:
-#             records = execute_query(sql)
-#             if not records:
-#                 return "No product sales data found in the lakehouse."
-            
-#             response = f"### Top {limit} Products by Revenue\n\n"
-#             response += "| Product Name | Category | Revenue ($) |\n"
-#             response += "| :--- | :--- | :--- |\n"
-#             for row in records:
-#                 response += f"| {row.get('product_name')} | {row.get('category')} | ${row.get('revenue'):,.2f} |\n"
-#             return response
-#         except Exception as e:
-#             return f"Error executing query: {str(e)}"
+Install:
+    pip install google-genai python-dotenv
 
-#     # Question: Total orders
-#     elif "total" in msg and "order" in msg:
-#         sql = "SELECT COUNT(*) AS total_orders FROM local.db.fact_sales"
-#         try:
-#             records = execute_query(sql)
-#             total = records[0]["total_orders"] if records else 0
-#             return f"### Total Orders\n\nThere have been a total of **{total:,}** orders placed in the retail lakehouse."
-#         except Exception as e:
-#             return f"Error executing query: {str(e)}"
+Env (get a free-tier key at https://aistudio.google.com/apikey):
+    GEMINI_API_KEY=...
+"""
 
-#     # Question: Total revenue
-#     elif "total" in msg and "revenue" in msg or "sales" in msg and "revenue" in msg:
-#         sql = "SELECT ROUND(SUM(total_amount), 2) AS total_revenue FROM local.db.fact_sales"
-#         try:
-#             records = execute_query(sql)
-#             revenue = records[0]["total_revenue"] if records else 0.0
-#             return f"### Total Revenue\n\nThe total revenue recorded in the lakehouse is **${revenue:,.2f}**."
-#         except Exception as e:
-#             return f"Error executing query: {str(e)}"
+import os
+from dotenv import load_dotenv
+from google import genai
+from google.genai import types
 
-#     # Question: Time travel / Look up orders X days ago / past snapshots
-#     elif "orders" in msg and ("ago" in msg or "snapshot" in msg or "history" in msg):
-#         try:
-#             # Let's get the active snapshots list
-#             df_snapshots = current_snapshot()
-#             records_snapshots = df_snapshots.toPandas().to_dict(orient="records")
-#             if not records_snapshots:
-#                 return "No snapshots found for the sales fact table."
-            
-#             # Sort snapshots by committed_at ascending
-#             records_snapshots = sorted(records_snapshots, key=lambda x: x["committed_at"])
-            
-#             # Default to the first (historical) snapshot for comparison
-#             target_snapshot = records_snapshots[0]
-#             snapshot_id = target_snapshot["snapshot_id"]
-#             timestamp = target_snapshot["committed_at"]
-            
-#             # Execute count at that historical snapshot
-#             sql_historical = "SELECT COUNT(*) AS total_orders FROM local.db.fact_sales"
-#             historical_res = query_snapshot(snapshot_id, sql_historical)
-#             historical_count = historical_res[0]["total_orders"] if historical_res else 0
-            
-#             # Current count
-#             sql_current = "SELECT COUNT(*) AS total_orders FROM local.db.fact_sales"
-#             current_res = execute_query(sql_current)
-#             current_count = current_res[0]["total_orders"] if current_res else 0
-            
-#             response = f"### Iceberg Time Travel Summary\n\n"
-#             response += f"* **Current Snapshot Orders:** {current_count:,} orders\n"
-#             response += f"* **Historical Snapshot Orders:** {historical_count:,} orders (as of snapshot `{snapshot_id}` committed at `{timestamp}`)\n\n"
-#             response += "This comparison demonstrates Apache Iceberg's time-travel capability, querying snapshot history without restoring data files."
-#             return response
-#         except Exception as e:
-#             return f"Error retrieving historical snapshot: {str(e)}"
+from tools.lakehouse_tool import execute_query, get_schema_info as _get_schema_info
+from tools.time_travel_tool import query_snapshot as _query_snapshot
 
-#     # Question: Show schema / tables
-#     elif "schema" in msg or "tables" in msg or "columns" in msg:
-#         try:
-#             schemas = get_schema_info()
-#             response = "### Retail Lakehouse Schema & Tables\n\n"
-#             for table, cols in schemas.items():
-#                 response += f"#### Table: `local.db.{table}`\n"
-#                 response += "```\n"
-#                 for col_str in cols:
-#                     response += f"  - {col_str}\n"
-#                 response += "```\n"
-#             return response
-#         except Exception as e:
-#             return f"Error listing schemas: {str(e)}"
+load_dotenv()
 
-#     # 2. Allow raw SELECT SQL queries directly
-#     elif msg.startswith("select"):
-#         try:
-#             records = execute_query(user_message)
-#             if not records:
-#                 return "Query returned 0 results."
-            
-#             # Format JSON records as a markdown table
-#             headers = list(records[0].keys())
-#             response = "### SQL Execution Results\n\n"
-#             response += "| " + " | ".join(headers) + " |\n"
-#             response += "| " + " | ".join([":---" for _ in headers]) + " |\n"
-#             for row in records:
-#                 vals = [str(row.get(h)) for h in headers]
-#                 response += "| " + " | ".join(vals) + " |\n"
-#             return response
-#         except Exception as e:
-#             return f"### SQL Execution Error\n\n```\n{str(e)}\n```"
+api_key = os.environ.get("GEMINI_API_KEY")
+if not api_key:
+    raise ValueError(
+        "GEMINI_API_KEY environment variable is not set. "
+        "Get a free key at https://aistudio.google.com/apikey and add it "
+        "to your .env file."
+    )
 
-#     # 3. Default fallback guidance
-#     else:
-#         return (
-#             "### Retail Lakehouse Assistant (Mock Agent Mode)\n\n"
-#             "I am ready to help you analyze your Apache Iceberg retail data. Since no API key is configured, "
-#             "I am running in rule-based mode. You can try asking:\n\n"
-#             "* **\"Show schema\"** to list all catalog tables and columns.\n"
-#             "* **\"Total orders\"** to get the count of all retail transactions.\n"
-#             "* **\"Total revenue\"** to see total sales values.\n"
-#             "* **\"Top 5 products\"** to fetch products generating highest sales.\n"
-#             "* **\"Orders history\"** to perform an Iceberg time-travel snapshot comparison.\n\n"
-#             "*Or, you can write any raw SQL query starting with **`SELECT`** directly (e.g. `SELECT * FROM local.db.dim_store LIMIT 3`).*"
-#         )
+client = genai.Client(api_key=api_key)
+
+# gemini-2.5-flash: free tier is ~10-15 requests/minute depending on your
+# account. gemini-3.5-flash is newer/smarter but capped at just 5 RPM on
+# the free tier, which is easy to blow through while testing — that's the
+# 429 RESOURCE_EXHAUSTED error you hit. Swap back to "gemini-3.5-flash" if
+# you upgrade to a paid tier later. Check current limits at
+# https://ai.google.dev/gemini-api/docs/rate-limits
+MODEL_NAME = "gemini-2.5-flash"
+
+# ---------------------------------------------------------------------------
+# System instruction: this is what lets the model turn "what's the total
+# record count?" into correct SQL instead of guessing table/column names.
+# Update this if your Week 1 schema differs.
+# ---------------------------------------------------------------------------
+SYSTEM_INSTRUCTION = """You are a data analyst assistant for a retail Apache Iceberg lakehouse.
+
+Catalog: local.db
+Tables:
+  - dim_customer  (customer dimension)
+  - dim_product   (product dimension)
+  - dim_store     (store dimension)
+  - dim_date      (date dimension)
+  - fact_sales    (sales / orders fact table)
+
+Rules:
+1. If you are not certain of exact column names, call get_schema first.
+   Never invent a column or table name.
+2. Always answer using run_sql_query (for current data) or
+   query_time_travel (for "as of <date/snapshot>" questions). Never state
+   a number you did not get from a tool call.
+3. Always use fully qualified table names: local.db.<table>.
+4. When you report a number, briefly name the table/query it came from
+   (and the snapshot/date, if it was a time-travel query).
+5. If a query fails, explain the error in plain language rather than
+   silently retrying with a guess.
+"""
 
 
-import re
-from tools.lakehouse_tool import execute_query, get_schema_info
-from tools.time_travel_tool import query_snapshot
-from query_engine import current_snapshot
+# ---------------------------------------------------------------------------
+# Tool functions — google-genai's automatic function calling builds the
+# schema from these type hints + docstrings, so both need to be accurate.
+# ---------------------------------------------------------------------------
+def get_schema() -> dict:
+    """Get column names and types for every table in the retail lakehouse
+    (dim_customer, dim_product, dim_store, dim_date, fact_sales). Call this
+    before writing SQL if you are unsure of a column name."""
+    return _get_schema_info()
+
+
+def run_sql_query(sql: str) -> str:
+    """Run a read-only SQL query (SELECT, SHOW, or DESCRIBE) against the
+    CURRENT state of the Iceberg lakehouse and return the resulting rows.
+
+    Args:
+        sql: A fully qualified, read-only SQL query, e.g.
+             "SELECT COUNT(*) AS total FROM local.db.fact_sales"
+    """
+    return str(execute_query(sql))
+
+
+def query_time_travel(snapshot_id: str, sql: str) -> str:
+    """Run a read-only SQL query against a specific historical Iceberg
+    snapshot of fact_sales. Use this for "as of <date>" or "N days ago"
+    questions. Write the SQL as if the historical table were named
+    `historical_data`, e.g. "SELECT COUNT(*) FROM historical_data".
+
+    Args:
+        snapshot_id: The Iceberg snapshot ID to query against
+        sql: SQL written against the table name `historical_data`
+    """
+    return str(_query_snapshot(snapshot_id, sql))
+
+
+_config = types.GenerateContentConfig(
+    system_instruction=SYSTEM_INSTRUCTION,
+    tools=[get_schema, run_sql_query, query_time_travel],
+)
+
 
 def run_agent(user_message: str) -> str:
-    msg = user_message.strip().lower()
-
-    # --- 1. Raw SQL Path ---
-    if msg.startswith("select "):
-        try:
-            records = execute_query(user_message)
-            return format_to_markdown(records)
-        except Exception as e:
-            return f"### SQL Execution Error\n\n```\n{str(e)}\n```"
-
-    # --- 2. Flexible NLP Path (Use regex for better matching) ---
-    
-    # Match questions about products (e.g., "best products", "top products", "which products sold most")
-    if re.search(r"(top|best|most)\s+(product|item)", msg):
-        limit = 5
-        match = re.search(r"(\d+)", msg)
-        if match: limit = int(match.group(1))
-        
-        sql = f"SELECT p.product_name, p.category, ROUND(SUM(s.total_amount), 2) AS revenue FROM local.db.fact_sales s JOIN local.db.dim_product p ON s.product_id = p.product_id GROUP BY p.product_name, p.category ORDER BY revenue DESC LIMIT {limit}"
-        return format_to_markdown(execute_query(sql))
-
-    # Match questions about volume (e.g., "count orders", "how many orders", "total orders")
-    elif re.search(r"(count|how many|total)\s+(order|transaction)", msg):
-        sql = "SELECT COUNT(*) AS total_orders FROM local.db.fact_sales"
-        records = execute_query(sql)
-        total = records[0]["total_orders"]
-        return f"### Total Orders\n\nThere have been **{total:,}** orders in the lakehouse."
-
-    # Match questions about revenue (e.g., "how much money", "total revenue", "total sales")
-    elif re.search(r"(total|sum)\s+(revenue|sales|money)", msg):
-        sql = "SELECT ROUND(SUM(total_amount), 2) AS total_revenue FROM local.db.fact_sales"
-        records = execute_query(sql)
-        revenue = records[0]["total_revenue"]
-        return f"### Total Revenue\n\nThe total revenue is **${revenue:,.2f}**."
-
-    # Match schema/table questions
-    elif re.search(r"(schema|table|column|list)", msg):
-        return format_schema_response(get_schema_info())
-
-    # --- 3. Default Fallback ---
-    return "I'm not sure how to answer that. Try asking about 'Total Revenue', 'Top products', or use a raw SQL `SELECT` statement."
-
-# --- Helper functions to keep code clean ---
-def format_to_markdown(records):
-    if not records: return "No results found."
-    headers = list(records[0].keys())
-    response = "| " + " | ".join(headers) + " |\n"
-    response += "| " + " | ".join([":---" for _ in headers]) + " |\n"
-    for row in records:
-        response += "| " + " | ".join([str(row.get(h, '')) for h in headers]) + " |\n"
-    return response
-
-def format_schema_response(schemas):
-    response = "### Retail Lakehouse Schema\n\n"
-    for table, cols in schemas.items():
-        response += f"#### `{table}`\n- " + "\n- ".join(cols) + "\n"
-    return response
+    """
+    Sends a user message to Gemini with the lakehouse tools attached.
+    Automatic function calling handles the tool-call loop (including
+    calling get_schema first if needed) and returns the final text answer.
+    """
+    try:
+        chat = client.chats.create(model=MODEL_NAME, config=_config)
+        response = chat.send_message(user_message)
+        return response.text or "I couldn't generate an answer."
+    except genai.errors.ClientError as e:
+        if getattr(e, "code", None) == 429 or "RESOURCE_EXHAUSTED" in str(e):
+            return (
+                "I'm being rate-limited by the free-tier Gemini API "
+                "(too many requests this minute). Wait about a minute "
+                "and try again."
+            )
+        return f"The model API returned an error: {e}"

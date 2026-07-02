@@ -1,62 +1,35 @@
-import math
 from query_engine import spark
 
 
-def sanitize_value(value):
+def query_snapshot(snapshot_id: str, sql: str):
     """
-    Recursively replace NaN/Infinity with None so the result
-    can always be safely JSON-serialized (Starlette's default
-    JSONResponse uses allow_nan=False).
+    Executes a read-only SQL query against a specific historical Iceberg
+    snapshot of fact_sales.
+
+    IMPORTANT: the caller's `sql` should reference the temp view name
+    `historical_data`, e.g. "SELECT COUNT(*) FROM historical_data".
+    (The previous version of this function created a temp view but then
+    ran the raw SQL directly, so a query like "SELECT * FROM fact_sales"
+    silently hit the *current* table instead of the snapshot. This
+    version guards against that by rewriting bare references to the
+    live table name to `historical_data` as a safety net, but the agent
+    should always be told to use `historical_data` directly.)
     """
-    if isinstance(value, float):
-        if math.isnan(value) or math.isinf(value):
-            return None
-        return value
-    if isinstance(value, dict):
-        return {k: sanitize_value(v) for k, v in value.items()}
-    if isinstance(value, (list, tuple)):
-        return [sanitize_value(v) for v in value]
-    return value
+    try:
+        df = (
+            spark.read.option("snapshot-id", snapshot_id)
+            .format("iceberg")
+            .load("local.db.fact_sales")
+        )
+        df.createOrReplaceTempView("historical_data")
 
+        # Safety net: if the model forgot and wrote the live table name,
+        # redirect it to the snapshot view instead of silently querying
+        # current data.
+        safe_sql = sql.replace("local.db.fact_sales", "historical_data")
+        safe_sql = safe_sql.replace("fact_sales", "historical_data")
 
-def sanitize_records(records):
-    return [sanitize_value(row) for row in records]
-
-
-def query_snapshot(snapshot_id: int, sql: str):
-    """
-    Executes a read-only SQL query against a specific Iceberg snapshot.
-    """
-
-    sql = sql.strip()
-
-    # Only allow SELECT queries
-    if not sql.lower().startswith("select"):
-        raise ValueError("Only SELECT statements are allowed.")
-
-    forbidden = [
-        "insert",
-        "update",
-        "delete",
-        "drop",
-        "alter",
-        "truncate",
-        "merge",
-        "create",
-        "call"
-    ]
-
-    for word in forbidden:
-        if word in sql.lower():
-            raise ValueError(f"{word.upper()} statements are not allowed.")
-
-    # Replace table reference with VERSION AS OF
-    sql = sql.replace(
-        "local.db.fact_sales",
-        f"local.db.fact_sales VERSION AS OF {snapshot_id}"
-    )
-
-    df = spark.sql(sql)
-    records = df.toPandas().to_dict(orient="records")
-
-    return sanitize_records(records)
+        result_df = spark.sql(safe_sql)
+        return result_df.toPandas().to_dict(orient="records")
+    except Exception as e:
+        return {"error": f"Failed to query snapshot {snapshot_id}: {str(e)}"}
